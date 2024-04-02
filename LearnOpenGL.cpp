@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-#include <shader_s.h>
+#include <Shader_s.h>
 #include <stb_image.h>
 
 
