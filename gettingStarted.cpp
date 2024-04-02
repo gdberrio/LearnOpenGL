@@ -64,7 +64,7 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	Shader ourShader("shader.vs", "shader.fs");
+	Shader ourShader("shaders/shader.vs", "shaders/shader.fs");
 
 	float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
