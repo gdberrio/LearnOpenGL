@@ -19,8 +19,8 @@ void processInput(GLFWwindow* window);
 
 float mixValue = 0.2f;
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1024;
+const unsigned int SCR_HEIGHT = 768;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
