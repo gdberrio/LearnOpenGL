@@ -12,12 +12,28 @@
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
 float mixValue = 0.2f;
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+float lastX = SCR_WIDTH / 2.0, lastY = SCR_HEIGHT / 2.0;
+float yaw = -90.0f;
+float pitch = 0.0f;
+float fov = 45.0f;
+
+bool firstMouse = true;
 
 int main()
 {
@@ -35,6 +51,10 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -175,8 +195,15 @@ int main()
 	glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0);
 	ourShader.setInt("texture2", 1);
 
+	glm::mat4 projection = glm::mat4(1.0f);
+	projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	ourShader.setMat4("projection", projection);
+
 	while (!glfwWindowShouldClose(window))
 	{
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
 		processInput(window);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -187,15 +214,13 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
 		ourShader.use();
-		glm::mat4 view = glm::mat4(1.0f);
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-		glm::mat4 projection = glm::mat4(1.0f);
-		projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		ourShader.setFloat("mixValue", mixValue);
-		int viewLoc = glGetUniformLocation(ourShader.ID, "view");
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		int projectionLoc = glGetUniformLocation(ourShader.ID, "projection");
-		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		glm::mat4 view = glm::mat4(1.0f);
+		const float radius = 10.0f;
+		float camX = sin(glfwGetTime()) * radius;
+		float camZ = cos(glfwGetTime()) * radius;
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		ourShader.setMat4("view", view);
 		glBindVertexArray(VAO); 
 
 		for (unsigned int i = 0; i < 10; i++)
@@ -206,8 +231,7 @@ int main()
 			if (i % 3 == 0)
 				angle = glfwGetTime() * 25.0f;
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			int modelLoc = glGetUniformLocation(ourShader.ID, "model");
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+			ourShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 		glfwSwapBuffers(window);
@@ -228,6 +252,48 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+	
+	const float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(direction);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	fov -= (float)yoffset;
+	if (fov < 1.0f)
+		fov = 1.0f;
+	if (fov > 45.0f)
+		fov = 45.0f;
+}
+
 void processInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -244,4 +310,22 @@ void processInput(GLFWwindow* window)
 		if (mixValue <= 0.0f)
 			mixValue = 0.0f;
 	}
+	const float cameraSpeed = 2.5f * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		cameraPos += cameraSpeed * cameraFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		cameraPos -= cameraSpeed * cameraFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		cameraPos -= cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		cameraPos += cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
+	}
+	//cameraPos.y = 0.0f;
 }
