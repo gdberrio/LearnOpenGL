@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\Projects\OpenGL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Projects\OpenGL\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Projects\LearnOpenGL\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Projects\LearnOpenGL\lib\lib-vc2022;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

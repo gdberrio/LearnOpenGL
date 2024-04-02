@@ -7,8 +7,8 @@
 
 #include <iostream>
 
-#include "shader_s.h"
-#include "stb_image.h"
+#include <shader_s.h>
+#include <stb_image.h>
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
